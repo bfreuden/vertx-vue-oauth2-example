@@ -65,7 +65,7 @@ The `/account` "page" is calling the API to get user data
 
 ```
 
-The app is globally configured to go to the /login page in case of HTTP 401 error:
+The app is globally configured to go to the `/signin` page in case of HTTP 401 error:
 ```javascript
 const vm = new Vue ({
     router,
@@ -93,21 +93,54 @@ const routes = [
 ];
 ```
 
-So the idea is:
+So the idea is
 
-1. you're landing on /
-2. the vue router redirects you to the /account page
-3. an API call is performed
-4. you receive a 401 error
-5. you're redirected to the /signin page
+1. you're landing on `/`
+2. the vue router redirects you to the `/account` page
+3. an API call is performed to get user data
+4. you receive an HTTP 401 error
+5. you're redirected to the `/signin` page
+
 
 Problem is if you don't have this Vert.x modification:
 https://github.com/bfreuden/vertx-vue-oauth2-example/commit/796c92fa18aa2162299d30bd6f0287e030d98b52
 
-Then axios is not receiving a 401 error, it is receiving a generic `AxiosError: Network Error` because of the redirect.
+That's to say this...
+```java
+    case 302:
+        ctx.response()
+                .putHeader(HttpHeaders.LOCATION, payload)
+                .setStatusCode(302)
+                .end("Redirecting to " + payload + ".");
+        return;
+```
+... becoming this:
+```java
+    case 302:
+        if (!"XMLHttpRequest".equals(ctx.request().getHeader("X-Requested-With"))) {
+            ctx.response()
+                    .putHeader(HttpHeaders.LOCATION, payload)
+                    .setStatusCode(302)
+                    .end("Redirecting to " + payload + ".");
+        } else {
+            ctx.fail(401, exception);
+        }
+        return;
+```
 
+... then axios is not receiving a 401 error, it is receiving a generic `AxiosError: Network Error` because of the redirect.
 So you can't distinguish between "I'm not authenticated" and "the server down". 
 This seems to be by browser design and there is nothing you can do.
 
+Since this kind of thing already exists in Vert.x codebase: https://github.com/bfreuden/vertx-vue-oauth2-example/blob/8d396813169ed50b0dfe8c66ee8552989e8abea5/src/main/java/io/vertx/ext/web/handler/impl/AuthenticationHandlerImpl.java#L132
 
+```java
+    case 401:
+        if (!"XMLHttpRequest".equals(ctx.request().getHeader("X-Requested-With"))) { // <-- here
+            setAuthenticateHeader(ctx);
+        }
+        ctx.fail(401, exception);
+        return;
+```
 
+... then I'm wondering if my modification could make sense.
