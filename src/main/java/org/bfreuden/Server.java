@@ -48,7 +48,8 @@ public class Server extends AbstractVerticle {
                 .setupCallback(router.route("/oauth2/callback"))
                 .withScope("openid");
 
-        // API protected with OAuth2
+        // API protected with OAuth2 like in the vert.x example:
+        // https://github.com/vert-x3/vertx-examples/blob/b6194db5b5e7eac3173f8c968c9ecac8e4a567f9/web-examples/src/main/java/io/vertx/example/web/oauth2/Server.java#L45
         router.route("/api/*")
                 .handler(oauth2Handler);
 
@@ -110,6 +111,7 @@ public class Server extends AbstractVerticle {
 
     private void keycloakLogout(RoutingContext ctx) {
         String endSessionURL = oAuth2Auth.endSessionURL(ctx.user());
+        // not required because Front-channel logout is working
 //        clearSessionAndUser(ctx);
         ctx.response()
                 .setStatusCode(302)
