@@ -1,0 +1,121 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vert.x Vue Oauth</title>
+    <style>
+.center {
+  margin: 25vh auto 25vh auto;
+  height: 400px;
+  border: 3px solid blue;
+  width: 400px;
+}    
+    </style>
+</head>
+<body>
+    <div id="app">
+        <router-view></router-view>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-router@3.0.2/dist/vue-router.js"></script>
+    <script>
+
+const api  = axios.create()
+api.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest"
+
+const Signin = {
+    template: `
+    <div class="center">
+      <div>
+        <h1>Welcome to this awesome app!</h1>
+      </div>
+      <div>
+        <a href="/oauth2/login"><button>Login with Keycloak</button></a>
+      </div>
+    </div>
+    `,
+};
+
+const Account = {
+    template: `
+        <div class="center">
+            <div>
+              <h1>User account</h1>
+            </div>
+            <div v-if="loading">
+              <h5>loading...</h5>
+            </div>
+            <div v-else-if="error">
+              <h3>error</h3>
+              <p>{{ error }}</p>
+            </div>
+            <div v-else>
+                <div>
+                  <h3>ID token</h3>
+                  <textarea>{{ token }}</textarea>
+                </div>
+                <div>
+                  <h3>Email</h3>
+                  <p>{{ email }}</p>
+                </div>
+                <div>
+                  <a href="/oauth2/logout"><button>Logout</button></a>
+                </div>
+                <div>
+                  <a href="/oauth2/keycloak-logout"><button>End Keycloak session</button></a>
+                </div>
+            </div>
+            </div>
+    `,
+    data: () => ({
+        loading: true,
+        token: null,
+        email: null,
+        error: null,
+    }),
+    async mounted() {
+       try {
+           const response = await api.get("/api/account")
+           this.token = response.data.token
+           this.email = response.data.email
+       } catch (error) {
+            this.error = "an error occurred while fetching your account from the server: " + error
+       } finally {
+            this.loading = false
+       }
+    }
+};
+
+const routes = [
+    { path: "/", redirect: { path: "/account" } },
+    { path: "/signin", component: Signin },
+    { path: "/account", component: Account }
+];
+
+const router = new VueRouter({ routes });
+
+const vm = new Vue ({
+    router,
+    el: "#app",
+    beforeMount() {
+        const self = this;
+        api.interceptors.response.use(function (response) {
+            return response;
+          }, function (error) {
+            if (error.response && error.response.status === 401)
+                self.$router.push({path: "/signin"});
+            return Promise.reject(error);
+          }
+        );
+    }
+}).$mount("#app");
+
+    </script>
+</body>
+</html>
+
+
