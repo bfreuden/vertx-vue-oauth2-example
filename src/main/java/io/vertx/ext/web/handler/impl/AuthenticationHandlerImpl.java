@@ -119,10 +119,14 @@ public abstract class AuthenticationHandlerImpl<T extends AuthenticationProvider
 
                 switch (statusCode) {
                     case 302:
-                        ctx.response()
-                                .putHeader(HttpHeaders.LOCATION, payload)
-                                .setStatusCode(302)
-                                .end("Redirecting to " + payload + ".");
+                        if (!"XMLHttpRequest".equals(ctx.request().getHeader("X-Requested-With"))) {
+                            ctx.response()
+                                    .putHeader(HttpHeaders.LOCATION, payload)
+                                    .setStatusCode(302)
+                                    .end("Redirecting to " + payload + ".");
+                        } else {
+                            ctx.fail(401, exception);
+                        }
                         return;
                     case 401:
                         if (!"XMLHttpRequest".equals(ctx.request().getHeader("X-Requested-With"))) {
