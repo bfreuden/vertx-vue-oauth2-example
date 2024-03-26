@@ -144,3 +144,19 @@ Since this kind of thing already exists in Vert.x codebase: https://github.com/b
 ```
 
 ... then I'm wondering if my modification could make sense.
+
+Spring seems to be doing something similar: https://github.com/candrews/spring-security/blob/09100daf0fd6cd3a89dded4c962191cff98bb031/config/src/test/java/org/springframework/security/config/annotation/web/configurers/oauth2/client/OAuth2LoginConfigurerTests.java#L391
+
+```java
+	@Test
+	public void oauth2LoginWithOneClientConfiguredAndRequestXHRNotAuthenticatedThenDoesNotRedirectForAuthorization()
+			throws Exception {
+		loadConfig(OAuth2LoginConfig.class);
+		String requestUri = "/";
+		this.request = new MockHttpServletRequest("GET", requestUri);
+		this.request.setServletPath(requestUri);
+		this.request.addHeader("X-Requested-With", "XMLHttpRequest");
+		this.springSecurityFilterChain.doFilter(this.request, this.response, this.filterChain);
+		assertThat(this.response.getStatus()).isEqualTo(401); // <-- here
+	}
+```
