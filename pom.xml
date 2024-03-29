@@ -10,7 +10,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <vertx.version>4.3.8</vertx.version>
+    <vertx.version>4.4.8</vertx.version>
     <maven.compiler.release>11</maven.compiler.release>
   </properties>
 
@@ -33,6 +33,11 @@
     <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-auth-oauth2</artifactId>
+      <version>${vertx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-web-templ-handlebars</artifactId>
       <version>${vertx.version}</version>
     </dependency>
   </dependencies>
